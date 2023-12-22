@@ -1,33 +1,47 @@
 from queue import Queue
 import time
+import uuid
+import signal
 
 request_queue = Queue()
-is_here = True
+is_running = True
 
 
 def generate_request():
-    user_query: str = input("\nEnter a query (or press 'Enter' to exit): ")
-    if not user_query:
-        global is_here
-        is_here = False
-    else:
-        request_queue.put(user_query)
-        print(f"Queue entity has been added: {user_query}")
-        print(f"Queue: {', '.join(request_queue.queue)}")
+    request_id = str(uuid.uuid4())  # Генеруємо унікальний ID для заявки
+    request_queue.put(request_id)
+    print(f"Request {request_id} added to the queue.")
+    print(f"Queue: {', '.join(request_queue.queue)}")
+    time.sleep(1)
 
 
 def process_request():
     if not request_queue.empty():
-        print("Start query processing...")
-        for _ in range(request_queue.qsize()):
-            query = request_queue.get()
-            print(f"Processing query: {query}")
-            time.sleep(0.5)
+        print("Start processing requests...")
+        while not request_queue.empty():
+            request_id = request_queue.get()
+            print(f"Processing request: {request_id}")
+            time.sleep(1)
+        print("Queue is empty.\n")
+    else:
+        print("Queue is empty.\n")
 
-    print("Queue is empty.")
 
+def handle_exit(signum, frame):
+    global is_running
+    is_running = False
+    print("\nExiting the program...")
+
+
+# Додаємо обробник сигналу преривання для можливості коректного виходу з програми
+signal.signal(signal.SIGINT, handle_exit)
 
 if __name__ == '__main__':
-    while is_here:
-        generate_request()
-    process_request()
+    try:
+        while is_running:
+            generate_request()
+            process_request()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("Program terminated.")
